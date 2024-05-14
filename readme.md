@@ -1,7 +1,7 @@
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?style=plastic)](./LICENSE)
 [![CircleCI](https://circleci.com/gh/mashingan/smapping.svg?style=svg)](https://circleci.com/gh/mashingan/smapping)
-[![GoDoc](https://godoc.org/github.com/mashingan/smapping?status.svg)](https://godoc.org/github.com/mashingan/smapping)
-[![Go Report Card](https://goreportcard.com/badge/github.com/mashingan/smapping)](https://goreportcard.com/report/github.com/mashingan/smapping)
+[![GoDoc](https://godoc.org/github.com/Kirill-Znamenskiy/smapping?status.svg)](https://godoc.org/github.com/Kirill-Znamenskiy/smapping)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Kirill-Znamenskiy/smapping)](https://goreportcard.com/report/github.com/Kirill-Znamenskiy/smapping)
 
 # smapping
 Golang structs generic mapping.
@@ -84,7 +84,7 @@ for custom and self-defined struct.
 
 ## Install
 ```
-go get github.com/mashingan/smapping
+go get -u github.com/Kirill-Znamenskiy/smapping
 ```
 
 ## Examples
@@ -104,7 +104,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/mashingan/smapping"
+	"github.com/Kirill-Znamenskiy/smapping"
 )
 
 type Source struct {
@@ -272,7 +272,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/mashingan/smapping"
+	"github.com/Kirill-Znamenskiy/smapping"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -409,7 +409,7 @@ In this example, we'll see how to exclude using the `delete` keyword.
 package main
 
 import (
-	"github.com/mashingan/smapping"
+	"github.com/Kirill-Znamenskiy/smapping"
 )
 
 type Struct struct {
