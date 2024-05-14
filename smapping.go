@@ -469,7 +469,7 @@ func SetFieldFromTag(
 	}
 	rField.Set(rValue)
 	return true, nil
-
+}
 
 /*
 FillStruct acts just like “json.Unmarshal“ but works with “Mapped“
