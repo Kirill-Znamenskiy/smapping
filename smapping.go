@@ -454,11 +454,13 @@ func SetFieldFromTag(
 			return false, err
 		}
 	} else if rFieldKind == reflect.Ptr && rValueKind != reflect.Ptr && rFieldType.Elem() == rValueType {
-		//nval := reflect.New(rValueType).Elem()
-		//nval.Set(rValue)
-		rValue = rValue.Addr()
+		rNewValue := reflect.New(rValueType).Elem()
+		rNewValue.Set(rValue)
+		rValue = rNewValue.Addr()
 	} else if rFieldKind == reflect.Ptr && rValueKind != reflect.Ptr && rValue.CanConvert(rFieldType.Elem()) {
-		rValue = rValue.Convert(rFieldType.Elem()).Addr()
+		rNewValue := reflect.New(rValueType).Elem()
+		rNewValue.Set(rValue.Convert(rFieldType.Elem()))	
+		rValue = rNewValue.Addr()
 	} else if rFieldKind != reflect.Ptr && rValueKind == reflect.Ptr && rFieldType == rValueType.Elem() {
 		rValue = rValue.Elem()
 	} else if rFieldKind != reflect.Ptr && rValueKind == reflect.Ptr && rValue.Elem().CanConvert(rFieldType) {
@@ -738,19 +740,4 @@ func SQLScan(row SQLScanner, obj interface{}, tag string, x ...string) error {
 	mapvals := make([]interface{}, length)
 	tagFields := make(map[string]reflect.StructField)
 	for i, k := range fieldsName {
-		assignScanner(mapvals, tagFields, tag, i, k, obj, mapres[k])
-	}
-	if err := row.Scan(mapvals...); err != nil {
-		return err
-	}
-	for i, k := range fieldsName {
-		assignValuer(mapres, tagFields, tag, k, obj, mapvals[i])
-	}
-	var err error
-	if tag == "" {
-		err = FillStruct(obj, mapres)
-	} else {
-		err = FillStructByTags(obj, mapres, tag)
-	}
-	return err
-}
+		assignScanner(mapvals, tagFields, tag, i
