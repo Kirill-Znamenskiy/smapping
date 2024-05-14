@@ -419,7 +419,7 @@ func SetFieldFromTag(
 	lcFieldZeroValue := reflect.New(rFieldType).Elem()
 	if rFieldType == rValueType {
 		// nothing
-	} else if rField.CanConvert(rFieldType) {
+	} else if rValue.CanConvert(rFieldType) {
 		rValue = rValue.Convert(rFieldType)
 	} else if rFieldType.Implements(mapDecoderI) || reflect.PointerTo(rFieldType).Implements(mapDecoderI) {
 		isPtr := rFieldType.Kind() == reflect.Ptr
@@ -457,15 +457,19 @@ func SetFieldFromTag(
 		//nval := reflect.New(rValueType).Elem()
 		//nval.Set(rValue)
 		rValue = rValue.Addr()
+	} else if rFieldKind == reflect.Ptr && rValueKind != reflect.Ptr && rValue.CanConvert(rFieldType.Elem()) {
+		rValue = rValue.Convert(rFieldType.Elem()).Addr()
 	} else if rFieldKind != reflect.Ptr && rValueKind == reflect.Ptr && rFieldType == rValueType.Elem() {
 		rValue = rValue.Elem()
+	} else if rFieldKind != reflect.Ptr && rValueKind == reflect.Ptr && rValue.Elem().CanConvert(rFieldType) {
+		rValue = rValue.Elem().Convert(rFieldType)
 	} else if rFieldType != rValueType {
 		return false, fmt.Errorf("provided value (%#v) type %T not match field tag '%s' of tagname '%s'  of type '%v' from object",
 			value, value, tagName, tagValue, rFieldType)
 	}
 	rField.Set(rValue)
 	return true, nil
-}
+
 
 /*
 FillStruct acts just like “json.Unmarshal“ but works with “Mapped“
