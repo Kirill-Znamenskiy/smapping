@@ -381,40 +381,53 @@ func populateMapFieldsTag(mapfield map[string]reflect.StructField, tagname strin
 
 func setFieldFromTag(obj interface{}, tagname, tagvalue string,
 	value interface{}, mapfield map[string]reflect.StructField) (bool, error) {
-	sval := extractValue(obj)
-	stype := sval.Type()
-	var (
-		vfield reflect.Value
-		field  reflect.StructField
-	)
-	if tagname == "" {
-		vfield = sval.FieldByName(tagvalue)
-		var fieldok bool
-		field, fieldok = stype.FieldByName(tagvalue)
-		if !fieldok {
+	return SetFieldFromTag(obj, tagname, tagvalue, value, mapfield)
+}
+
+func SetFieldFromTag(
+	obj any,
+	tagName, tagValue string,
+	value any,
+	tagName2structField map[string]reflect.StructField,
+) (bool, error) {
+	rObjVal := extractValue(obj)
+	rObjType := rObjVal.Type()
+
+	fieldName := tagValue
+	if tagName == "" {
+		if _, ok := rObjType.FieldByName(tagValue); !ok {
 			return false, nil
 		}
 	} else {
-		var fieldok bool
-		field, fieldok = mapfield[tagvalue]
-		if !fieldok {
+		rFieldStructField, ok := tagName2structField[tagValue]
+		if !ok {
 			return false, nil
 		}
-		vfield = sval.FieldByName(field.Name)
+		fieldName = rFieldStructField.Name
 	}
-	val := reflect.ValueOf(value)
-	if !val.IsValid() {
+	rField := rObjVal.FieldByName(fieldName)
+	rFieldKind := rField.Kind()
+	rFieldType := rField.Type()
+
+	rValue := reflect.ValueOf(value)
+	if !rValue.IsValid() {
 		return false, nil
 	}
-	res := reflect.New(vfield.Type()).Elem()
-	if typof := vfield.Type(); typof.Implements(mapDecoderI) ||
-		reflect.PtrTo(typof).Implements(mapDecoderI) {
-		isPtr := typof.Kind() == reflect.Ptr
+	rValueKind := rValue.Kind()
+	rValueType := rValue.Type()
+
+	lcFieldZeroValue := reflect.New(rFieldType).Elem()
+	if rFieldType == rValueType {
+		// nothing
+	} else if rField.CanConvert(rFieldType) {
+		rValue = rValue.Convert(rFieldType)
+	} else if rFieldType.Implements(mapDecoderI) || reflect.PointerTo(rFieldType).Implements(mapDecoderI) {
+		isPtr := rFieldType.Kind() == reflect.Ptr
 		var mapval reflect.Value
 		if isPtr {
-			mapval = reflect.New(typof.Elem())
+			mapval = reflect.New(rFieldType.Elem())
 		} else {
-			mapval = reflect.New(typof)
+			mapval = reflect.New(rFieldType)
 		}
 		mapdecoder, ok := mapval.Interface().(MapDecoder)
 		if !ok {
@@ -424,37 +437,33 @@ func setFieldFromTag(obj interface{}, tagname, tagvalue string,
 			return false, err
 		}
 		if isPtr {
-			val = reflect.ValueOf(mapdecoder)
+			rValue = reflect.ValueOf(mapdecoder)
 		} else {
-			val = reflect.Indirect(reflect.ValueOf(mapdecoder))
+			rValue = reflect.Indirect(reflect.ValueOf(mapdecoder))
 		}
-	} else if isTime(vfield.Type()) {
-		if err := fillTime(vfield, &val); err != nil {
+	} else if isTime(rField.Type()) {
+		if err := fillTime(rField, &rValue); err != nil {
 			return false, err
 		}
-	} else if res.IsValid() && val.Type().Name() == "Mapped" {
-		if err := fillMapIter(vfield, res, &val, tagname); err != nil {
+	} else if lcFieldZeroValue.IsValid() && rValue.Type().Name() == "Mapped" {
+		if err := fillMapIter(rField, lcFieldZeroValue, &rValue, tagName); err != nil {
 			return false, err
 		}
-	} else if isSlicedObj(val, res) {
-		if err := fillSlice(res, &val, tagname); err != nil {
+	} else if isSlicedObj(rValue, lcFieldZeroValue) {
+		if err := fillSlice(lcFieldZeroValue, &rValue, tagName); err != nil {
 			return false, err
 		}
-	} else if vfield.Kind() == reflect.Ptr {
-		vfv := vfield.Type().Elem()
-		if vfv != val.Type() {
-			return false, fmt.Errorf(
-				"provided value (%#v) pointer type %T not match field tag '%s' of tagname '%s' of type '%v' from object",
-				value, value, tagname, tagvalue, field.Type)
-		}
-		nval := reflect.New(vfv).Elem()
-		nval.Set(val)
-		val = nval.Addr()
-	} else if field.Type != val.Type() {
+	} else if rFieldKind == reflect.Ptr && rValueKind != reflect.Ptr && rFieldType.Elem() == rValueType {
+		//nval := reflect.New(rValueType).Elem()
+		//nval.Set(rValue)
+		rValue = rValue.Addr()
+	} else if rFieldKind != reflect.Ptr && rValueKind == reflect.Ptr && rFieldType == rValueType.Elem() {
+		rValue = rValue.Elem()
+	} else if rFieldType != rValueType {
 		return false, fmt.Errorf("provided value (%#v) type %T not match field tag '%s' of tagname '%s'  of type '%v' from object",
-			value, value, tagname, tagvalue, field.Type)
+			value, value, tagName, tagValue, rFieldType)
 	}
-	vfield.Set(val)
+	rField.Set(rValue)
 	return true, nil
 }
 
