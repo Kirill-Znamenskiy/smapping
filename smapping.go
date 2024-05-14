@@ -49,7 +49,7 @@ func extractValue(x interface{}) reflect.Value {
 
 /*
 MapFields maps between struct to mapped interfaces{}.
-The argument must be (zero or many pointers to) struct or else it will be ignored.
+The argument must be (zero or minterface{} pointers to) struct or else it will be ignored.
 Now it's implemented as MapTags with empty tag "".
 
 Only map the exported fields.
@@ -385,9 +385,9 @@ func setFieldFromTag(obj interface{}, tagname, tagvalue string,
 }
 
 func SetFieldFromTag(
-	obj any,
+	obj interface{},
 	tagName, tagValue string,
-	value any,
+	value interface{},
 	tagName2structField map[string]reflect.StructField,
 ) (bool, error) {
 	rObjVal := extractValue(obj)
